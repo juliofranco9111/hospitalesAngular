@@ -3,8 +3,11 @@ import { Component, NgZone, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
+import { environment } from 'src/environments/environment';
 
 declare const gapi: any;
+
+
 
 @Component({
   selector: 'app-login',
@@ -13,7 +16,7 @@ declare const gapi: any;
 })
 export class LoginComponent implements OnInit {
 
-  email: string;
+    email: string;
   public auth2: any;
 
   public loginForm = this.fb.group({
@@ -41,7 +44,7 @@ export class LoginComponent implements OnInit {
 
     const remember = this.loginForm.value.remember;
 
-    console.log( 'recordar ' + remember);
+    // console.log( 'recordar ' + remember);
 
     this.uS.login(this.loginForm.value, remember)
       .subscribe(correcto => {
@@ -66,19 +69,23 @@ export class LoginComponent implements OnInit {
   }
 
   async startApp() {
-      await this.uS.googleInit();
-
-      this.auth2 = this.uS.auth2;
-
-      this.attachSignin(document.getElementById('my-signin2'));
+    
+    await this.uS.googleInit();
+    
+    this.auth2 = this.uS.auth2;
+    
+    this.attachSignin(document.getElementById('my-signin2'));
+    
   }
 
   attachSignin(element) {
     // console.log(element.id);
+
+    
     this.auth2.attachClickHandler(element, {},
         (googleUser) => {
         const id_token = googleUser.getAuthResponse().id_token;
-        // console.log(id_token);
+        console.log(id_token);
 
         this.uS.loginGoogle( id_token ).subscribe( resp => {
           this.ngZone.run(() => {

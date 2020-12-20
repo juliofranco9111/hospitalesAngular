@@ -40,6 +40,12 @@ export class UsuarioService {
     return this.usuario.uid || '';
   }
 
+  get role(): 'ADMIN_ROLE'| 'USER ROLE' {
+  
+  
+    return this.usuario.role;
+  }
+
   get headers() {
     return {
       headers: {
@@ -53,7 +59,7 @@ export class UsuarioService {
 
   googleInit() {
 
-    return new Promise(resolve => {
+    return new Promise<void>(resolve => {
 
       gapi.load('auth2', () => {
         this.auth2 = gapi.auth2.init({
@@ -66,14 +72,22 @@ export class UsuarioService {
     });
   }
 
+  guardarLocalStorage(token: string, menu: any) {
+    localStorage.setItem('token', token);
+    localStorage.setItem('menu', JSON.stringify(menu));
+  }
+
   logout() {
     localStorage.removeItem('token');
+    localStorage.removeItem('menu');
+
+    
 
     this.auth2.signOut().then(() => {
 
       this.ngZone.run(() => {
 
-        console.log('User signed out.');
+        // console.log('User signed out.');
         this.router.navigateByUrl('/login');
       });
     });
@@ -91,7 +105,7 @@ export class UsuarioService {
       role: this.usuario.role
     }
 
-    return this.http.put(`${base_url}/usuarios/${this.uid}`, data, this.headers );
+    return this.http.put(`${base_url}/usuarios/${this.uid}`, data, this.headers);
   }
 
   validarToken(): Observable<boolean> {
@@ -112,7 +126,7 @@ export class UsuarioService {
           uid } = resp.usuario;
 
         this.usuario = new Usuario(nombre, email, '', img || '', google, role, uid);
-        localStorage.setItem('token', resp.token);
+        this.guardarLocalStorage(resp.token, resp.menu);
         return true;
       }),
       catchError(error => of(false)));
@@ -130,11 +144,10 @@ export class UsuarioService {
     const url = base_url + '/login';
     return this.http.post(url, usuario)
       .pipe(tap((resp: any) => {
-        // console.log(resp.usuarioDB.uid);
+        // console.log(resp);
         localStorage.setItem('id', resp.usuarioDB.uid);
-        localStorage.setItem('token', resp.token);
         localStorage.setItem('usuario', JSON.stringify(resp.usuarioDB));
-
+        this.guardarLocalStorage(resp.token, resp.menu);
         return true;
       }));
   }
@@ -147,8 +160,8 @@ export class UsuarioService {
     return this.http.post(url, { token })
       .pipe(tap((resp: any) => {
         // console.log(resp);
-        localStorage.setItem('token', resp.token);
-        return true;
+        this.guardarLocalStorage(resp.token, resp.menu);
+        // return true;
       }));
   }
 
@@ -156,25 +169,25 @@ export class UsuarioService {
     const url = `${base_url}/usuarios?desde=${desde}`;
 
     return this.http.get<cargarUsuario>(url, this.headers)
-                .pipe(map( resp => {
-                  // console.log(resp);
-                  const usuarios = resp.usuarios.map( user => new Usuario(
-                    user.nombre,
-                    user.email,
-                    '',
-                    user.img,
-                    user.google,
-                    user.role,
-                    user.uid) )
-                  return {
-                    total: resp.total,
-                    usuarios
-                  }
-                } ))
+      .pipe(map(resp => {
+        // console.log(resp);
+        const usuarios = resp.usuarios.map(user => new Usuario(
+          user.nombre,
+          user.email,
+          '',
+          user.img,
+          user.google,
+          user.role,
+          user.uid))
+        return {
+          total: resp.total,
+          usuarios
+        }
+      }))
 
   }
 
-  eliminarUsuario( usuario: Usuario) {
+  eliminarUsuario(usuario: Usuario) {
     // console.log('eliminando');
 
     const url = `${base_url}/usuarios/${usuario.uid}`;
@@ -182,8 +195,8 @@ export class UsuarioService {
 
   }
 
-  guardarUsuario( usuario: Usuario ) {
+  guardarUsuario(usuario: Usuario) {
 
-    return this.http.put(`${base_url}/usuarios/${usuario.uid}`, usuario, this.headers );
+    return this.http.put(`${base_url}/usuarios/${usuario.uid}`, usuario, this.headers);
   }
 }
